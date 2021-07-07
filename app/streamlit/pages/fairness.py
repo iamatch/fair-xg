@@ -14,8 +14,10 @@ def fairness_analysis(df):
     col1, col2, col3 = st.beta_columns(3)
 
     target = col1.selectbox('Target', target_columns)
-    preds = col2.multiselect('Prediction', [col for col in preds_columns if col != target])
-    sensitives = col3.multiselect('Sensitive', [col for col in sensitives_columns if col not in [target] + preds])
+    preds_options = [col for col in preds_columns if col != target]
+    preds = col2.multiselect('Prediction', preds_options, [preds_options[0]])
+    sensitives_options = [col for col in sensitives_columns if col not in [target] + preds]
+    sensitives = col3.multiselect('Sensitive', sensitives_options, [sensitives_options[0]])
 
     # Load fairness evaluator
     fe = FairnessEvaluator(df=df, target=target, preds=preds)
@@ -43,14 +45,16 @@ def fairness_analysis(df):
 
         # Display metrics radar plot
         metric_preds = [data[('-', 'value')] for data in data_preds]
-        fig = fe.plot_radar(metric_preds, fe.preds, [COLOR_PALETE[0], RGB_GREY], 'Metrics')
+        cols[0].markdown("<h3 style='text-align: center;'>%s</h3>" % 'Metrics', unsafe_allow_html=True)
+        fig = fe.plot_radar(metric_preds, fe.preds, [COLOR_PALETE[0], RGB_GREY])
         fu.plot_fig(cols[0], fig)
 
         # Display fairness indicators radar plots
         for col, s, color in zip(cols[1:], sensitives, COLOR_PALETE[1:]):
             metric_preds = [1 - data[(s, fair_metric)] for data in data_preds]
             title = s.title() + ' Fairness'
-            fig = fe.plot_radar(metric_preds, fe.preds, [color, RGB_GREY], title, marker_bool=True)
+            col.markdown("<h3 style='text-align: center;'>%s</h3>" % title, unsafe_allow_html=True)
+            fig = fe.plot_radar(metric_preds, fe.preds, [color, RGB_GREY], marker_bool=True)
             fu.plot_fig(col, fig)
             bias_metrics = [x[0] for x in metric_preds[0].items() if x[1] < 1]
             if bias_metrics:

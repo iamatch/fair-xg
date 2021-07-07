@@ -564,12 +564,11 @@ class FairnessEvaluator:
                                 showlegend=False
                             )
                         ])
-                fig.update_layout(plot_bgcolor=BG_COLOR,
-                                  margin=go.layout.Margin(t=0, b=0, l=0, r=0), width=800, height=200)
+                fig.update_layout(margin=go.layout.Margin(t=0, b=0, l=0, r=0), width=800, height=200)
                 figs[metric_name].append(fig)
         return figs
 
-    def plot_radar(self, metric_preds, names, colors, title, marker_bool=False):
+    def plot_radar(self, metric_preds, names, colors, marker_bool=False):
 
         fig = go.Figure()
 
@@ -614,7 +613,6 @@ class FairnessEvaluator:
                         marker=dict(
                             symbol='x',
                             size=10,
-                            color='#ffd8d6',
                             line=dict(
                                 color='#9e2b2d',
                                 width=1
@@ -632,13 +630,8 @@ class FairnessEvaluator:
                 ),
                 angularaxis=dict(tickfont=dict(size=13), rotation=90),),
             showlegend=False,
-            margin=go.layout.Margin(t=50, b=0, l=30, r=30),
-            dragmode=False,
-            title=f"<b>{title}</b>",
-            title_font_family="IBM Plex Sans",
-            title_font_color="rgba(38,39,48,255)",
-            title_font_size=20,
-            title_x=0.5,
+            margin=go.layout.Margin(t=0, b=0, l=30, r=30),
+            dragmode=False
         )
         fig.update_xaxes(fixedrange=True)
         return fig
