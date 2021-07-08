@@ -28,7 +28,8 @@ def get_target_preds_sensitves_columns(df):
 ###################
 
 def display_df(df):
-    st.dataframe(df.head())
+    st.dataframe(df, height=150)
+    st.markdown(f"Table has **{len(df)}** rows")
 
 
 def plot_fig(st_object, fig):

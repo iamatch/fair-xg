@@ -12,13 +12,6 @@ from statsmodels.stats.proportion import proportions_ztest
 from .metrics import MetricsEvaluator
 from app.streamlit.static import *
 
-ACC_METRIC = 'acc'
-TNR_METRIC = 'tnr'
-TPR_METRIC = 'tpr'
-NPV_METRIC = 'npv'
-PPV_METRIC = 'ppv'
-METRICS = [ACC_METRIC, TNR_METRIC, TPR_METRIC, NPV_METRIC, PPV_METRIC]
-
 GREENS = cm.get_cmap('Greens')
 REDS = cm.get_cmap('Reds')
 
@@ -523,7 +516,7 @@ class FairnessEvaluator:
                     figs[metric_name][sensitive][s] = (x, y, y1, y2, label)
         return figs
 
-    def get_threshold_figs(self, preds=None, sensitives=None):
+    def get_threshold_figs(self, preds=None, sensitives=None, threshold=0.5):
 
         if preds is None:
             preds = self.preds[:2]
@@ -535,22 +528,35 @@ class FairnessEvaluator:
         curves_list = [self.get_threshold_curves(pred) for pred in preds]
         for metric_name in sorted(curves_list[0]):
             figs[metric_name] = []
-            for sensitive, color in zip(['-'] + sensitives, COLOR_PALETE):
-                fig = go.Figure()
+            fig = go.Figure()
+            fig.add_traces([
+                go.Scatter(
+                    x=[threshold, threshold],
+                    y=[0, 1],
+                    line=dict(color="rgb(246,51,102)", dash='dash'),
+                    mode='lines',
+                    showlegend=False
+                )])
+            y_min = 1
+            y_max = 0
+            for sensitive in sensitives + ['-']:
                 for i, curves in enumerate(curves_list):
-                    if i == 0:
-                        color_ = color
-                    else:
-                        color_ = RGB_GREY
-                    for s in curves[metric_name][sensitive]:
+                    for s, color_ in zip(curves[metric_name][sensitive], COLOR_PALETE):
+                        if sensitive == '-':
+                            color_ = "rgb(246,51,102)"
                         x, y, y_lower, y_upper, name = curves[metric_name][sensitive][s]
+                        y_min = min(y_min, min(y_lower))
+                        y_max = max(y_max, max(y_upper))
+                        if name == '-':
+                            name = 'Dataset'
+                        dash = None
                         fig.add_traces([
                             go.Scatter(
                                 x=x,
                                 y=y,
-                                line=dict(color=color_),
+                                line=dict(color=color_, dash=dash),
                                 mode='lines+markers',
-                                showlegend=False,
+                                showlegend=True,
                                 name=name,
                             ),
                             go.Scatter(
@@ -564,74 +570,73 @@ class FairnessEvaluator:
                                 showlegend=False
                             )
                         ])
-                fig.update_layout(margin=go.layout.Margin(t=0, b=0, l=0, r=0), width=800, height=200)
-                figs[metric_name].append(fig)
+            fig.update_yaxes(ticklabelposition="inside top")
+            fig.update_xaxes(title="Thresholds")
+            fig.update_layout(margin=go.layout.Margin(t=0, b=0, l=0, r=0), width=800, height=400,
+                              legend=dict(orientation="h"),
+                              )
+            fig.update_layout(yaxis_range=[y_min, y_max], xaxis_range=[0.05, 0.95])
+            figs[metric_name].append(fig)
         return figs
 
-    def plot_radar(self, metric_preds, names, colors, marker_bool=False):
+    def unpack_metrics(self, r):
+        metrics_r_norm = r.items()
+        metrics_r_norm = sorted(metrics_r_norm, key=lambda x: x[0])
+        metrics, r_norm = zip(*metrics_r_norm)
+        metrics = list(metrics)
+        r_norm = list(r_norm)
+        metrics.append(metrics[0])
+        r_norm.append(r_norm[0])
+        return metrics, r_norm
+
+    def plot_radar(self, metric_preds, metric_preds_2, names, colors):
 
         fig = go.Figure()
 
         # TODO fix radar plot bug when threshold = 1
-
-        for i, (r, name, color) in enumerate(list(zip(metric_preds, names, colors))):
+        warning = False
+        metrics_warning = []
+        for i, (r, r2, name, color) in enumerate(list(zip(metric_preds, metric_preds_2, names, colors))):
             if r is not None:
-                metrics_r_norm = r.items()
-                metrics_r_norm = sorted(metrics_r_norm, key=lambda x: x[0])
-                metrics, r_norm = zip(*metrics_r_norm)
-                metrics = list(metrics)
-                r_norm = list(r_norm)
-                metrics.append(metrics[0])
-                r_norm.append(r_norm[0])
+
+                metrics, r_norm = self.unpack_metrics(r)
+                metrics_2, r_norm_2 = self.unpack_metrics(r2)
+
+                metrics_bias = []
+                metrics_warning = []
+                for r_norm_, metric in zip(r_norm_2, metrics_2):
+                    if r_norm_ < 1:
+                        warning = True
+                        metrics_bias.append('⚠️ ' + metric)
+                        metrics_warning.append(metric)
+                    else:
+                        metrics_bias.append('✅ ' + metric)
                 traces = [go.Scatterpolar(
                     r=r_norm,
-                    theta=metrics,
-                    mode='lines',
+                    theta=metrics_bias,
+                    mode='markers+lines',
                     hoverinfo='text',
                     text=r_norm,
                     fill='toself',
                     fillcolor=f"rgba{color[3:-1]}, {0.4})",
                     marker=dict(
-                        size=13,
+                        size=8,
                         color=color
                     ),
                     name=name
                 )]
-                if i == 0 and marker_bool:
-                    r_norm_bias = []
-                    metrics_bias = []
-                    for r_norm_, metric in zip(r_norm, metrics):
-                        if r_norm_ < 1:
-                            r_norm_bias.append(r_norm_)
-                            metrics_bias.append(metric)
-                    traces.append(go.Scatterpolar(
-                        r=r_norm_bias,
-                        theta=metrics_bias,
-                        mode='markers',
-                        hoverinfo='text',
-                        text=r_norm_bias,
-                        marker=dict(
-                            symbol='x',
-                            size=10,
-                            line=dict(
-                                color='#9e2b2d',
-                                width=1
-                            )
-                        ),
-                        name=name
-                    ))
                 fig.add_traces(traces)
         fig.update_layout(
             polar=dict(
                 bgcolor='#f0f2f6',
                 radialaxis=dict(
-                    visible=False,
+                    visible=True,
                     range=[0, 1.02],
                 ),
                 angularaxis=dict(tickfont=dict(size=13), rotation=90),),
             showlegend=False,
-            margin=go.layout.Margin(t=0, b=0, l=30, r=30),
-            dragmode=False
+            margin=go.layout.Margin(t=25, b=25, l=25, r=25),
+            dragmode=False,
         )
         fig.update_xaxes(fixedrange=True)
-        return fig
+        return fig, warning, metrics_warning

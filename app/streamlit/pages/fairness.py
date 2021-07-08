@@ -15,20 +15,23 @@ def fairness_analysis(df):
 
     target = col1.selectbox('Target', target_columns)
     preds_options = [col for col in preds_columns if col != target]
-    preds = col2.multiselect('Prediction', preds_options, [preds_options[0]])
+    pred = col2.selectbox('Prediction', preds_options)
+    preds = [pred]
     sensitives_options = [col for col in sensitives_columns if col not in [target] + preds]
-    sensitives = col3.multiselect('Sensitive', sensitives_options, [sensitives_options[0]])
+    sensitive = col3.selectbox('Sensitive', sensitives_options)
+    sensitives = [sensitive]
 
     # Load fairness evaluator
     fe = FairnessEvaluator(df=df, target=target, preds=preds)
 
     # Other parameters
     with st.beta_expander('Other parameters'):
-        col1, col2, col3 = st.beta_columns(3)
-        fair_metric = col1.selectbox('Fairness Metric', list(FAIRNESS_METRIC.keys()),
-                                     format_func=lambda d: FAIRNESS_METRIC[d])
-        threshold = col2.slider('Prediction Threshold', min_value=0., max_value=1., value=0.5, step=0.05)
-        alpha = col3.slider('Risk', min_value=0., max_value=.2, value=0.05)
+        col1, col2 = st.beta_columns(2)
+        # fair_metric = col1.selectbox('Fairness Metric', list(FAIRNESS_METRIC.keys()),
+        #                              format_func=lambda d: FAIRNESS_METRIC[d])
+        fair_metric = 'unfair'
+        threshold = col1.slider('Prediction Threshold', min_value=0., max_value=1., value=0.5, step=0.05)
+        alpha = col2.slider('Risk', min_value=0., max_value=.2, value=0.05)
 
     # Fit fairness metrics
     if 1 <= len(preds) <= 2:
@@ -37,44 +40,31 @@ def fairness_analysis(df):
         ###############
         # RADAR PLOTS #
         ###############
+        with st.beta_expander('Fairness Radar', True):
 
-        cols = st.beta_columns(1 + len(sensitives))
+            # Get data for radar plot
+            data_preds = [fe.get_bias_table(pred=pred).data for pred in fe.preds]
 
-        # Get data for radar plot
-        data_preds = [fe.get_bias_table(pred=pred).data for pred in fe.preds]
-
-        # Display metrics radar plot
-        metric_preds = [data[('-', 'value')] for data in data_preds]
-        cols[0].markdown("<h3 style='text-align: center;'>%s</h3>" % 'Metrics', unsafe_allow_html=True)
-        fig = fe.plot_radar(metric_preds, fe.preds, [COLOR_PALETE[0], RGB_GREY])
-        fu.plot_fig(cols[0], fig)
-
-        # Display fairness indicators radar plots
-        for col, s, color in zip(cols[1:], sensitives, COLOR_PALETE[1:]):
-            metric_preds = [1 - data[(s, fair_metric)] for data in data_preds]
-            title = s.title() + ' Fairness'
-            col.markdown("<h3 style='text-align: center;'>%s</h3>" % title, unsafe_allow_html=True)
-            fig = fe.plot_radar(metric_preds, fe.preds, [color, RGB_GREY], marker_bool=True)
-            fu.plot_fig(col, fig)
-            bias_metrics = [x[0] for x in metric_preds[0].items() if x[1] < 1]
-            if bias_metrics:
-                col.error(f'Model is not fair regarding **{s.title()}**.')
-            else:
-                col.success(f'Model is fair regarding **{s.title()}**.')
+            # Display metrics radar plot
+            metric_preds = [data[('-', 'value')] for data in data_preds]
+            metric_preds_2 = [1 - data[(sensitives[0], fair_metric)] for data in data_preds]
+            fig, warning, metrics_warning = fe.plot_radar(metric_preds, metric_preds_2, fe.preds, ["rgb(246,51,102)", RGB_GREY])
+            fu.plot_fig(st, fig)
+            if warning:
+                st.warning("Some bias have been detected")
 
         ###############
         # CURVE PLOTS #
         ###############
 
-        with st.beta_expander('Thresholds curves'):
-            figs = fe.get_threshold_figs(fe.preds, sensitives)
-            # Plot figs for each metric name
-            for metric_name in figs:
-                st.markdown("<p style='text-align: center;'>%s</p>" % metric_name, unsafe_allow_html=True)
-                # Plot figs for each sensitive variable
-                cols = st.beta_columns(1 + len(sensitives))
-                for col, fig in zip(cols, figs[metric_name]):
-                    fu.plot_fig(col, fig)
+        # TODO Add option to scale curves
+        with st.beta_expander('Analysis'):
+            metrics_sorted = sorted(METRICS, key=lambda x: (x not in metrics_warning, x))
+            metric_name = st.selectbox("Fairness Metric", metrics_sorted, format_func=lambda x: '⚠️ ' + x if x in metrics_warning else '✅ ' + x)
+            figs = fe.get_threshold_figs(fe.preds, sensitives, threshold)
+            # Plot figs for each sensitive variable
+            for fig in figs[metric_name]:
+                fu.plot_fig(st, fig)
 
 
 def write():
@@ -101,6 +91,7 @@ def write():
     # Example
     else:
         df = pd.read_csv(f'data/{dataset}.csv').fillna(0)
+        del df['random_xg']
 
     ###################
     # DATASET PREVIEW #
