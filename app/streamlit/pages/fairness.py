@@ -11,21 +11,22 @@ def fairness_analysis(df):
 
     # Main parameters
     target_columns, preds_columns, sensitives_columns = fu.get_target_preds_sensitves_columns(df)
-    col1, col2, col3 = st.beta_columns(3)
-
-    target = col1.selectbox('Target', target_columns)
-    preds_options = [col for col in preds_columns if col != target]
-    pred = col2.selectbox('Prediction', preds_options)
-    preds = [pred]
-    sensitives_options = [col for col in sensitives_columns if col not in [target] + preds]
-    sensitive = col3.selectbox('Sensitive', sensitives_options)
-    sensitives = [sensitive]
-
-    # Load fairness evaluator
-    fe = FairnessEvaluator(df=df, target=target, preds=preds)
 
     # Other parameters
-    with st.beta_expander('Other parameters'):
+    with st.beta_expander('Parameters', True):
+        col1, col2, col3 = st.beta_columns(3)
+
+        target = col1.selectbox('Target', target_columns)
+        preds_options = [col for col in preds_columns if col != target]
+        pred = col2.selectbox('Prediction', preds_options)
+        preds = [pred]
+        sensitives_options = [col for col in sensitives_columns if col not in [target] + preds]
+        sensitive = col3.selectbox('Sensitive', sensitives_options)
+        sensitives = [sensitive]
+
+        # Load fairness evaluator
+        fe = FairnessEvaluator(df=df, target=target, preds=preds)
+
         col1, col2 = st.beta_columns(2)
         # fair_metric = col1.selectbox('Fairness Metric', list(FAIRNESS_METRIC.keys()),
         #                              format_func=lambda d: FAIRNESS_METRIC[d])
@@ -97,7 +98,8 @@ def write():
     # DATASET PREVIEW #
     ###################
 
-    fu.display_df(df)
+    with st.beta_expander('Dataset Preview', True):
+        fu.display_df(df)
 
     #####################
     # FAIRNESS ANALYSIS #

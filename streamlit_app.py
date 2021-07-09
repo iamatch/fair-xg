@@ -9,6 +9,7 @@ PAGES = {
 }
 
 
+# TODO fix theme
 def main():
     st.set_page_config(page_title=f"{PAGE_FAIRNESS} | IAmatch", page_icon=":soccer:", initial_sidebar_state="auto")
     st.sidebar.title("IAmatch")

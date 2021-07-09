@@ -558,6 +558,7 @@ class FairnessEvaluator:
                                 mode='lines+markers',
                                 showlegend=True,
                                 name=name,
+                                legendgroup=name
                             ),
                             go.Scatter(
                                 x=x + x[::-1],  # x, then x reversed
@@ -567,13 +568,17 @@ class FairnessEvaluator:
                                 line=dict(color=f"rgba{color_[3:-1]}, {0})"),
                                 hoverinfo="skip",
                                 name=name,
+                                legendgroup=name,
                                 showlegend=False
                             )
                         ])
             fig.update_yaxes(ticklabelposition="inside top")
             fig.update_xaxes(title="Thresholds")
             fig.update_layout(margin=go.layout.Margin(t=0, b=0, l=0, r=0), width=800, height=400,
-                              legend=dict(orientation="h"),
+                              legend=dict(orientation="h",
+                                          y=-0.2),
+                              xaxis={'fixedrange': True},
+                              yaxis={'fixedrange': True}
                               )
             fig.update_layout(yaxis_range=[y_min, y_max], xaxis_range=[0.05, 0.95])
             figs[metric_name].append(fig)
@@ -631,11 +636,13 @@ class FairnessEvaluator:
                 bgcolor='#f0f2f6',
                 radialaxis=dict(
                     visible=True,
+                    showline=False,
+                    showticklabels=False,
                     range=[0, 1.02],
                 ),
                 angularaxis=dict(tickfont=dict(size=13), rotation=90),),
             showlegend=False,
-            margin=go.layout.Margin(t=25, b=25, l=25, r=25),
+            margin=go.layout.Margin(t=40, b=40, l=40, r=40),
             dragmode=False,
         )
         fig.update_xaxes(fixedrange=True)
