@@ -535,7 +535,8 @@ class FairnessEvaluator:
                     y=[0, 1],
                     line=dict(color="rgb(246,51,102)", dash='dash'),
                     mode='lines',
-                    showlegend=False
+                    name='Prediction Threshold',
+                    showlegend=True
                 )])
             y_min = 1
             y_max = 0
