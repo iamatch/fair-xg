@@ -599,7 +599,6 @@ class FairnessEvaluator:
 
         fig = go.Figure()
 
-        # TODO fix radar plot bug when threshold = 1
         warning = False
         metrics_warning = []
         for i, (r, r2, name, color) in enumerate(list(zip(metric_preds, metric_preds_2, names, colors))):

@@ -58,7 +58,6 @@ def fairness_analysis(df):
         # CURVE PLOTS #
         ###############
 
-        # TODO Add option to scale curves
         with st.beta_expander('Analysis'):
             metrics_sorted = sorted(METRICS, key=lambda x: (x not in metrics_warning, x))
             metric_name = st.selectbox("Fairness Metric", metrics_sorted, format_func=lambda x: '⚠️ ' + x if x in metrics_warning else '✅ ' + x)
