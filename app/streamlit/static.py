@@ -2,7 +2,7 @@ import plotly.express as px
 
 # Page names
 PAGE_FAIRNESS = 'XG Fairness'
-PAGE_IAMATCH = 'About us'
+PAGE_IAMATCH = 'Info'
 
 SORTED_PAGES = [PAGE_FAIRNESS, PAGE_IAMATCH]
 
