@@ -1,8 +1,5 @@
 # fair-xg
 
-````Python
-from fairness.fairness import FairnessEvaluator
+Streamlit application: https://share.streamlit.io/iamatch/fair-xg/main
 
-fe = FairnessEvaluator(df=df, target='target', preds='shot_statsbomb_xg')
-fe.fit(sensitives=['gender'])
-````
+![Alt text](static/streamlit.png "Title")
