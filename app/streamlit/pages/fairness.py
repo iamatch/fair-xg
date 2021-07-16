@@ -52,7 +52,8 @@ def fairness_analysis(df):
             fig, warning, metrics_warning = fe.plot_radar(metric_preds, metric_preds_2, fe.preds, ["rgb(246,51,102)", RGB_GREY])
             fu.plot_fig(st, fig)
             if warning:
-                st.warning("Some bias have been detected")
+                st.warning(f"Some **biases** have been detected on the **{sensitive}** variable "
+                           f"for the following metrics: **{', '.join(metrics_warning)}**.")
 
         ###############
         # CURVE PLOTS #

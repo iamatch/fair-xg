@@ -613,7 +613,8 @@ class FairnessEvaluator:
                     if r_norm_ < 1:
                         warning = True
                         metrics_bias.append('⚠️ ' + metric)
-                        metrics_warning.append(metric)
+                        if metric not in metrics_warning:
+                            metrics_warning.append(metric)
                     else:
                         metrics_bias.append('✅ ' + metric)
                 traces = [go.Scatterpolar(
