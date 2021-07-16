@@ -592,6 +592,7 @@ class FairnessEvaluator:
         r_norm = list(r_norm)
         metrics.append(metrics[0])
         r_norm.append(r_norm[0])
+        r_norm = [r if r == r else 0 for r in r_norm]
         return metrics, r_norm
 
     def plot_radar(self, metric_preds, metric_preds_2, names, colors):
