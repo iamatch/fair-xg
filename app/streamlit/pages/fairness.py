@@ -13,25 +13,25 @@ def fairness_analysis(df):
     target_columns, preds_columns, sensitives_columns = fu.get_target_preds_sensitves_columns(df)
 
     # Other parameters
-    with st.beta_expander('Parameters', True):
-        col1, col2, col3 = st.beta_columns(3)
+    col1, col2, col3 = st.beta_columns(3)
 
-        target = col1.selectbox('Target', target_columns)
-        preds_options = [col for col in preds_columns if col != target]
-        pred = col2.selectbox('Prediction', preds_options)
-        preds = [pred]
-        sensitives_options = [col for col in sensitives_columns if col not in [target] + preds]
-        sensitive = col3.selectbox('Sensitive', sensitives_options)
-        sensitives = [sensitive]
+    target = col1.selectbox('Target', target_columns)
+    preds_options = [col for col in preds_columns if col != target]
+    pred = col2.selectbox('Prediction', preds_options)
+    preds = [pred]
+    sensitives_options = [col for col in sensitives_columns if col not in [target] + preds]
+    sensitive = col3.selectbox('Sensitive', sensitives_options)
+    sensitives = [sensitive]
 
-        # Load fairness evaluator
-        fe = FairnessEvaluator(df=df, target=target, preds=preds)
+    # Load fairness evaluator
+    fe = FairnessEvaluator(df=df, target=target, preds=preds)
 
+    with st.beta_expander('Parameters', False):
         col1, col2 = st.beta_columns(2)
         # fair_metric = col1.selectbox('Fairness Metric', list(FAIRNESS_METRIC.keys()),
         #                              format_func=lambda d: FAIRNESS_METRIC[d])
         fair_metric = 'unfair'
-        threshold = col1.slider('Prediction Threshold', min_value=0., max_value=1., value=0.5, step=0.05)
+        threshold = col1.slider('Prediction Threshold', min_value=0.1, max_value=.9, value=0.5, step=0.05)
         alpha = col2.slider('Risk', min_value=0., max_value=.2, value=0.05)
 
     # Fit fairness metrics
